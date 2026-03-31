@@ -13,6 +13,7 @@
 
 #ifdef WIN32
 #include <Windows.h>
+#undef ReportEvent
 #include "StackWalker.h"
 #endif
 
