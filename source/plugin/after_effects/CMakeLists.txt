@@ -123,8 +123,16 @@ endif ()
 if (APPLE)
     find_program(APPLE_RESOURCE Rez)
     if (APPLE_RESOURCE)
+        if(NOT CMAKE_OSX_SYSROOT)
+            execute_process(COMMAND xcrun --show-sdk-path OUTPUT_VARIABLE CMAKE_OSX_SYSROOT OUTPUT_STRIP_TRAILING_WHITESPACE)
+        endif()
+        if(CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64")
+            set(REZ_ARCH arm64)
+        else()
+            set(REZ_ARCH x86_64)
+        endif()
         add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/${${PROJECT_NAME}_OUTPUT_NAME}.rsrc
-                            COMMAND ${APPLE_RESOURCE} ${CMAKE_CURRENT_SOURCE_DIR}/output_module.r -define __MACH__ -define CODEC_NAME="${Foundation_CODEC_NAME}" -arch x86_64 -useDF -isysroot ${CMAKE_OSX_SYSROOT} -i "$<JOIN:$<TARGET_PROPERTY:AdobeAfterEffectsSdk,INTERFACE_INCLUDE_DIRECTORIES>,;-i;>" -o ${CMAKE_BINARY_DIR}/${${PROJECT_NAME}_OUTPUT_NAME}.rsrc
+                            COMMAND ${APPLE_RESOURCE} ${CMAKE_CURRENT_SOURCE_DIR}/output_module.r -define __MACH__ -define CODEC_NAME="${Foundation_CODEC_NAME}" -arch ${REZ_ARCH} -useDF -isysroot ${CMAKE_OSX_SYSROOT} -i "$<JOIN:$<TARGET_PROPERTY:AdobeAfterEffectsSdk,INTERFACE_INCLUDE_DIRECTORIES>,;-i;>" -o ${CMAKE_BINARY_DIR}/${${PROJECT_NAME}_OUTPUT_NAME}.rsrc
                             COMMENT "Creating macOS resource file"
                             DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/output_module.r AdobeAfterEffectsSdk
                             VERBATIM

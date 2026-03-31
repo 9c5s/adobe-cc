@@ -49,9 +49,10 @@ namespace fdn
         Debug = 1,    // for debugging only; usually turned off
         Info = 2,     // informational
         Warning = 3,  // potential cause of later error noted
-        Error = 4,    // hit bad data or operating condition, may have to stop early 
+        Error = 4,    // hit bad data or operating condition, may have to stop early
         Fatal = 5,    // in the process of crashing, eg seg fault
 
+        ROTATE_LOG = 98,   // log file rotation request (internal use)
         NAME_THREAD = 99   // for implementation, do not use
     };
     struct CodeLocation {
@@ -64,6 +65,7 @@ namespace fdn
     };
     void logMessage(const CodeLocation& codeLocation, LogMessageSeverity severity, const std::string& msg);
     void nameThread(const std::string& name);
+    void rotateLog();  // rotate log file and reopen with a timestamped name
     void fatalError(const std::string& msg);   // null ptr read / write, segfault, div by 0, crash imminent
 }
 

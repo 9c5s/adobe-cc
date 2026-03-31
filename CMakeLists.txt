@@ -14,7 +14,7 @@ set (CMAKE_CXX_STANDARD 17)
 if(MSVC)
     # add_compile_options(/arch:AVX2)
     # may want to use this for specific source files
-else()
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|i[3-6]86")
     add_compile_options(-msse4.1)
 endif()
 

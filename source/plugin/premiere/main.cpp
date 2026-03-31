@@ -8,11 +8,13 @@
 #include "configure.hpp"
 #include "string_conversion.hpp"
 #include "presets.hpp"
+#include <chrono>
 #include <vector>
 #include <locale>
 
 #ifdef WIN32
 #include <Windows.h>
+#undef ReportEvent
 #include "StackWalker.h"
 #endif
 
@@ -94,6 +96,7 @@ prMALError wrapped_xSDKExport(csSDK_int32 selector, exportStdParms* stdParmsP, v
 
         case exSelExport:
             FDN_DEBUG("exSelExport");
+            fdn::rotateLog();  // rotate log file at export start
             result = doExport(stdParmsP, reinterpret_cast<exDoExportRec*>(param1));
             break;
 
@@ -875,6 +878,8 @@ prMALError doExport(exportStdParms* stdParmsP, exDoExportRec* exportInfoP)
     ExportSettings* settings = reinterpret_cast<ExportSettings*>(exportInfoP->privateData);
     prMALError error = malNoError;
 
+    auto exportStart = std::chrono::high_resolution_clock::now();
+
     try {
         // if (exportInfoP->exportAudio)
         //     renderAndWriteAllAudio(exportInfoP, error);
@@ -884,16 +889,29 @@ prMALError doExport(exportStdParms* stdParmsP, exDoExportRec* exportInfoP)
     }
     catch (const std::exception& ex)
     {
-        FDN_ERROR("exception thrown during export", ex.what());
+        auto exportEnd = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> exportSec = exportEnd - exportStart;
+        FDN_ERROR("export failed after ", exportSec.count(), " seconds: ", ex.what());
         settings->reportError(ex.what());
         return (error == malNoError) ? malUnknownError : error;
     }
     catch (...)
     {
-        FDN_ERROR("unknown exception thrown during export");
+        auto exportEnd = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> exportSec = exportEnd - exportStart;
+        FDN_ERROR("export failed after ", exportSec.count(), " seconds (unknown exception)");
         settings->reportError("unspecified error while rendering and writing video");
         return (error == malNoError) ? malUnknownError : error;
     }
 
-    return 	malNoError;
+    auto exportEnd = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> exportSec = exportEnd - exportStart;
+
+    if (error != malNoError) {
+        FDN_ERROR("export failed after ", exportSec.count(), " seconds with error code ", error);
+        return error;
+    }
+
+    FDN_INFO("export completed in ", exportSec.count(), " seconds");
+    return malNoError;
 }

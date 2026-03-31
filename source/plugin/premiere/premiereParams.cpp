@@ -233,7 +233,7 @@ prMALError generateDefaultParams(exportStdParms *stdParms, exGenerateDefaultPara
 		SDKStringConvert::to_buffer(ADBEAudioRatePerSecond, sampleRateParam.identifier);
         sampleRateParam.paramType = exParamType_float;
         sampleRateParam.flags = exParamFlag_none;
-        sampleRateValues.value.floatValue = 44100.0f; // disguise servers default samplerate
+        sampleRateValues.value.floatValue = 48000.0f;
         sampleRateValues.disabled = kPrFalse;
         sampleRateValues.hidden = kPrFalse;
         sampleRateParam.paramValues = sampleRateValues;

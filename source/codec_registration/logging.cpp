@@ -1,5 +1,7 @@
 #include <chrono>
+#include <ctime>
 #include <fstream>
+#include <iomanip>
 #include <queue>
 #include <map>
 #include <mutex>
@@ -120,16 +122,61 @@ public:
         );
     }
 
+    // Send a log file rotation request via the message queue.
+    // The actual file switch happens on the worker thread, ensuring thread safety.
+    void rotateLog()
+    {
+        pushMessage(
+            LogMessage{
+                nullptr,
+                LogMessageSeverity::ROTATE_LOG,
+                "",
+                std::this_thread::get_id()
+            }
+        );
+    }
+
     static Logger& theLogger();
 
 private:
     std::map<std::thread::id, std::string> threadNames_;
 
-    void handleMessage(const LogMessage& message, std::ofstream &out, LoggerLocationStyle locationStyle)
+    // Generate a timestamped log file name.
+    // Pattern: <CODEC_NAME>-log-YYYYMMDD-HHMMSS.txt
+    static PathType generateTimestampedLogFileName(const PathType& logPath)
+    {
+        auto now = std::chrono::system_clock::now();
+        auto time_t_now = std::chrono::system_clock::to_time_t(now);
+        std::tm tm_now;
+#ifdef WIN32
+        localtime_s(&tm_now, &time_t_now);
+#else
+        localtime_r(&time_t_now, &tm_now);
+#endif
+        std::ostringstream oss;
+        oss << FOUNDATION_CODEC_NAME "-log-"
+            << std::put_time(&tm_now, "%Y%m%d-%H%M%S")
+            << ".txt";
+
+        return logPath / oss.str();
+    }
+
+    void handleMessage(const LogMessage& message, std::ofstream &out, LoggerLocationStyle locationStyle,
+                       const PathType& logPath)
     {
         const auto& [codeLocation, severity, text, threadId] = message;
 
-        if (severity == LogMessageSeverity::NAME_THREAD) {  // hook to set thread names
+        if (severity == LogMessageSeverity::ROTATE_LOG) {
+            // rotate the log file: close current and reopen with a timestamped name
+            if (out.is_open()) {
+                out.close();
+            }
+            if (!logPath.empty()) {
+                PathType newLogFileName = generateTimestampedLogFileName(logPath);
+                out.open(newLogFileName.c_str());
+            }
+        }
+        else if (severity == LogMessageSeverity::NAME_THREAD) {  // hook to set thread names
             threadNames_.insert({ threadId, "["s + text + "]"s });
         }
         else
@@ -196,7 +243,7 @@ private:
                 // if a message was dequeued, used it
                 if (logMessage)
                 {
-                    handleMessage(*logMessage, out, locationStyle);
+                    handleMessage(*logMessage, out, locationStyle, logPath);
                 }
                 else {
                     break;
@@ -213,7 +260,7 @@ private:
             while (!messages_.empty())
             {
                 auto logMessage = messages_.front();
-                handleMessage(logMessage, out, locationStyle);
+                handleMessage(logMessage, out, locationStyle, logPath);
                 messages_.pop();
             }
         }
@@ -352,6 +399,11 @@ void logMessage(const CodeLocation& location, LogMessageSeverity severity, const
 void nameThread(const std::string& name)
 {
     fdn::Logger::theLogger().nameThread(name);
+}
+
+void rotateLog()
+{
+    fdn::Logger::theLogger().rotateLog();
 }
 
 }  // namespace fdn

@@ -82,27 +82,21 @@ std::string SDKStringConvert::to_string(const uint16_based_type *str)
     return to_string(to_wstring(str));
 #else
     CFIndex bytes = aUTF16CharLength(str) * sizeof(uint16_based_type);
-    CFStringRef input = CFStringCreateWithBytesNoCopy(kCFAllocatorDefault, reinterpret_cast<const UInt8 *>(str), bytes, kCFStringEncodingUTF16, false, kCFAllocatorNull);
-    const char *output = CFStringGetCStringPtr(input, kCFStringEncodingUTF8);
-    if (!output)
+    CFStringRef input = CFStringCreateWithBytesNoCopy(kCFAllocatorDefault, reinterpret_cast<const UInt8 *>(str), bytes, kCFStringEncodingUTF16LE, false, kCFAllocatorNull);
+
+    std::string result;
+    if (input)
     {
-        CFIndex maximum = CFStringGetMaximumSizeForEncoding(CFStringGetLength(input), kCFStringEncodingUTF8);
-        std::vector<char> buffer(maximum + 1);
-        if (cf_to_buffer(input, kCFStringEncodingUTF8, reinterpret_cast<UInt8 *>(buffer.data()), buffer.size()))
+        CFIndex maximum = CFStringGetMaximumSizeForEncoding(CFStringGetLength(input), kCFStringEncodingUTF8) + 1;
+        std::vector<char> buffer(maximum);
+        if (CFStringGetCString(input, buffer.data(), maximum, kCFStringEncodingUTF8))
         {
-            output = buffer.data();
+            result = buffer.data();
         }
+        CFRelease(input);
     }
 
-    std::string final;
-    if (output)
-    {
-        final = output;
-    }
-
-    CFRelease(input);
-
-    return final;
+    return result;
 #endif
 }
 
@@ -113,6 +107,9 @@ void SDKStringConvert::to_buffer(const std::string& str, pr_char_type* dst, size
 #else
     CFIndex bytes = str.length() * sizeof(char);
     CFStringRef input = CFStringCreateWithBytesNoCopy(kCFAllocatorDefault, reinterpret_cast<const UInt8*>(str.c_str()), bytes, kCFStringEncodingUTF8, false, kCFAllocatorNull);
+    // kCFStringEncodingUTF16 (native-endian) is correct for output: Adobe SDK
+    // expects native-endian UTF-16 in its buffers. to_string uses UTF16LE for
+    // input because raw memory from Adobe lacks a BOM.
     cf_to_buffer(input, kCFStringEncodingUTF16, reinterpret_cast<UInt8*>(dst), dstSizeInChars * (sizeof(uint16_based_type)));
     CFRelease(input);
 #endif
@@ -125,7 +122,7 @@ void SDKStringConvert::to_buffer(const std::wstring& str, pr_char_type* dst, siz
 #else
     CFIndex bytes = str.length() * sizeof(wchar_t);
     CFStringRef input = CFStringCreateWithBytesNoCopy(kCFAllocatorDefault, reinterpret_cast<const UInt8*>(str.c_str()), bytes, kCFStringEncodingUTF32LE, false, kCFAllocatorNull);
-    cf_to_buffer(input, kCFStringEncodingUTF16, reinterpret_cast<UInt8*>(dst), dstChars * (sizeof(uint16_based_type)));
+    cf_to_buffer(input, kCFStringEncodingUTF16, reinterpret_cast<UInt8*>(dst), dstChars * (sizeof(uint16_based_type)));  // native-endian output
     CFRelease(input);
 #endif
 }

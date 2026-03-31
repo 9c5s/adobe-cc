@@ -43,9 +43,9 @@ if (APPLE)
     if (NOT CPACK_RESOURCE_FILE_WELCOME)
         set (CPACK_RESOURCE_FILE_WELCOME ${CMAKE_CURRENT_LIST_DIR}/Welcome.txt)
     endif ()
-    # User can opt to provide a different name outside this file
-    if (NOT CPACK_PRODUCTBUILD_IDENTITY_NAME)
-        set (CPACK_PRODUCTBUILD_IDENTITY_NAME "Developer ID Installer")
+    # no default signing identity; pass -DCPACK_PRODUCTBUILD_IDENTITY_NAME="..." to sign
+    if (NOT DEFINED CPACK_PRODUCTBUILD_IDENTITY_NAME)
+        set (CPACK_PRODUCTBUILD_IDENTITY_NAME "")
     endif ()
     
     # Default is Darwin, not useful for generated file names:

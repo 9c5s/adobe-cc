@@ -31,14 +31,21 @@ target_link_libraries(libavutil
     INTERFACE $<$<PLATFORM_ID:Darwin>:${CoreVideo}>
 )
 
-target_include_directories(libavcodec INTERFACE
-    FFmpeg
+if(APPLE)
+    find_library(ICONV_LIB iconv)
+    find_library(ZLIB_LIB z)
+    target_link_libraries(libavcodec INTERFACE ${ICONV_LIB} ${ZLIB_LIB})
+    target_link_libraries(libavformat INTERFACE ${ZLIB_LIB})
+endif()
+
+target_include_directories(libavcodec BEFORE INTERFACE
+    ${CMAKE_CURRENT_LIST_DIR}/FFmpeg
 )
-target_include_directories(libavformat INTERFACE
-    FFmpeg
+target_include_directories(libavformat BEFORE INTERFACE
+    ${CMAKE_CURRENT_LIST_DIR}/FFmpeg
 )
-target_include_directories(libavutil INTERFACE
-    FFmpeg
+target_include_directories(libavutil BEFORE INTERFACE
+    ${CMAKE_CURRENT_LIST_DIR}/FFmpeg
 )
 
 add_library(ffmpeg::libavcodec ALIAS libavcodec)
