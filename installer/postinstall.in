@@ -5,14 +5,18 @@ set -e
 PRESETS_SRC="${Foundation_PRESETS_INSTALL_SRC}"
 PRESETS_PREFIX="$HOME/Documents/Adobe/Adobe Media Encoder"
 
-for VERSION in 12.0 13.0 14.0; do
-    if [ -d "$PRESETS_PREFIX/$VERSION" ]; then
-        if [ ! -d "$PRESETS_PREFIX/$VERSION/Presets" ]; then
-            mkdir "$PRESETS_PREFIX/$VERSION/Presets"
-            chown "$USER" "$PRESETS_PREFIX/$VERSION/Presets"
+# copy presets to all installed AME versions
+if [ -d "$PRESETS_PREFIX" ]; then
+    for VERSION_DIR in "$PRESETS_PREFIX"/*/; do
+        if [ -d "$VERSION_DIR" ]; then
+            PRESETS_DIR="$VERSION_DIR"Presets
+            if [ ! -d "$PRESETS_DIR" ]; then
+                mkdir "$PRESETS_DIR"
+                chown "$USER" "$PRESETS_DIR"
+            fi
+            cp -R "$PRESETS_SRC" "$PRESETS_DIR/"
         fi
-        cp -R "$PRESETS_SRC" "$PRESETS_PREFIX/$VERSION/Presets/"
-    fi
-done
+    done
+fi
 
 exit 0
