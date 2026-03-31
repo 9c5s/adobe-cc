@@ -122,22 +122,18 @@ public:
         );
     }
 
-    // Send a log file rotation request to the message queue.
+    // Send a log file rotation request via the message queue.
     // The actual file switch happens on the worker thread, ensuring thread safety.
     void rotateLog()
     {
-        LogMessage lm{
-            nullptr,
-            LogMessageSeverity::ROTATE_LOG,
-            "",
-            std::this_thread::get_id()
-        };
-
-        // bypass threshold check and push directly to the queue
-        {
-            std::lock_guard<std::mutex> guard(messagesMutex_);
-            messages_.push(std::move(lm));
-        }
+        pushMessage(
+            LogMessage{
+                nullptr,
+                LogMessageSeverity::ROTATE_LOG,
+                "",
+                std::this_thread::get_id()
+            }
+        );
     }
 
     static Logger& theLogger();

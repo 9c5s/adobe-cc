@@ -889,13 +889,17 @@ prMALError doExport(exportStdParms* stdParmsP, exDoExportRec* exportInfoP)
     }
     catch (const std::exception& ex)
     {
-        FDN_ERROR("exception thrown during export", ex.what());
+        auto exportEnd = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> exportSec = exportEnd - exportStart;
+        FDN_ERROR("export failed after ", exportSec.count(), " seconds: ", ex.what());
         settings->reportError(ex.what());
         return (error == malNoError) ? malUnknownError : error;
     }
     catch (...)
     {
-        FDN_ERROR("unknown exception thrown during export");
+        auto exportEnd = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> exportSec = exportEnd - exportStart;
+        FDN_ERROR("export failed after ", exportSec.count(), " seconds (unknown exception)");
         settings->reportError("unspecified error while rendering and writing video");
         return (error == malNoError) ? malUnknownError : error;
     }
