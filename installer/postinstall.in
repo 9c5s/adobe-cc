@@ -3,16 +3,20 @@
 set -e
 
 PRESETS_SRC="${Foundation_PRESETS_INSTALL_SRC}"
-PRESETS_PREFIX="$HOME/Documents/Adobe/Adobe Media Encoder"
+
+# resolve the console user's home (postinstall runs as root via installer)
+CONSOLE_USER=$(stat -f "%Su" /dev/console 2>/dev/null || echo "$USER")
+CONSOLE_HOME=$(eval echo "~$CONSOLE_USER")
+PRESETS_PREFIX="$CONSOLE_HOME/Documents/Adobe/Adobe Media Encoder"
 
 # copy presets to all installed AME versions
 if [ -d "$PRESETS_PREFIX" ]; then
     for VERSION_DIR in "$PRESETS_PREFIX"/*/; do
         if [ -d "$VERSION_DIR" ]; then
-            PRESETS_DIR="$VERSION_DIR"Presets
+            PRESETS_DIR="${VERSION_DIR}Presets"
             if [ ! -d "$PRESETS_DIR" ]; then
                 mkdir "$PRESETS_DIR"
-                chown "$USER" "$PRESETS_DIR"
+                chown "$CONSOLE_USER" "$PRESETS_DIR"
             fi
             cp -R "$PRESETS_SRC" "$PRESETS_DIR/"
         fi

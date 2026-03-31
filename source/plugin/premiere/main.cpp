@@ -906,7 +906,12 @@ prMALError doExport(exportStdParms* stdParmsP, exDoExportRec* exportInfoP)
 
     auto exportEnd = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> exportSec = exportEnd - exportStart;
-    FDN_INFO("export completed in ", exportSec.count(), " seconds");
 
-    return 	malNoError;
+    if (error != malNoError) {
+        FDN_ERROR("export failed after ", exportSec.count(), " seconds with error code ", error);
+        return error;
+    }
+
+    FDN_INFO("export completed in ", exportSec.count(), " seconds");
+    return malNoError;
 }
