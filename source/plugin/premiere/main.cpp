@@ -8,6 +8,7 @@
 #include "configure.hpp"
 #include "string_conversion.hpp"
 #include "presets.hpp"
+#include <chrono>
 #include <vector>
 #include <locale>
 
@@ -95,6 +96,7 @@ prMALError wrapped_xSDKExport(csSDK_int32 selector, exportStdParms* stdParmsP, v
 
         case exSelExport:
             FDN_DEBUG("exSelExport");
+            fdn::rotateLog();  // rotate log file at export start
             result = doExport(stdParmsP, reinterpret_cast<exDoExportRec*>(param1));
             break;
 
@@ -876,6 +878,8 @@ prMALError doExport(exportStdParms* stdParmsP, exDoExportRec* exportInfoP)
     ExportSettings* settings = reinterpret_cast<ExportSettings*>(exportInfoP->privateData);
     prMALError error = malNoError;
 
+    auto exportStart = std::chrono::high_resolution_clock::now();
+
     try {
         // if (exportInfoP->exportAudio)
         //     renderAndWriteAllAudio(exportInfoP, error);
@@ -895,6 +899,10 @@ prMALError doExport(exportStdParms* stdParmsP, exDoExportRec* exportInfoP)
         settings->reportError("unspecified error while rendering and writing video");
         return (error == malNoError) ? malUnknownError : error;
     }
+
+    auto exportEnd = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> exportSec = exportEnd - exportStart;
+    FDN_INFO("export completed in ", exportSec.count(), " seconds");
 
     return 	malNoError;
 }
